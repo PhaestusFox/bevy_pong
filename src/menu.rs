@@ -165,10 +165,10 @@ fn set_key_binding(
     if let Some(new) = new_key {
         match state.0 {
             SetBinding::None => unreachable!(),
-            SetBinding::P1Up => bindings.set(true, true, new),
-            SetBinding::P1Down => bindings.set(true, false, new),
-            SetBinding::P2Up => bindings.set(false, true, new),
-            SetBinding::P2Down => bindings.set(false, false, new),
+            SetBinding::P1Up => bindings.set(crate::Player::PlayerOne, true, new),
+            SetBinding::P1Down => bindings.set(crate::Player::PlayerOne, false, new),
+            SetBinding::P2Up => bindings.set(crate::Player::PlayerTwo, true, new),
+            SetBinding::P2Down => bindings.set(crate::Player::PlayerTwo, false, new),
         }
         next.set(SetBinding::None);
         if let Err(e) = pkv.set("KeyBind", &*bindings) {error!("{e}")};

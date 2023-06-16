@@ -3,7 +3,9 @@ use serde::{Serialize, Deserialize};
 
 mod menu;
 
-// mod game;
+mod game;
+
+use Player::*;
 
 fn main() {
     App::new()
@@ -19,6 +21,7 @@ fn main() {
     .add_system(spawn_cam.on_startup())
     .init_resource::<PlayerKeyBinds>()
     .add_system(back_to_main_menu)
+    .add_plugin(game::GamePlugin)
     .run()
 }
 
@@ -41,44 +44,51 @@ struct PlayerKeyBinds {
 }
 
 impl PlayerKeyBinds {
-    fn set(&mut self, player_one: bool, up: bool, to: KeyCode) {
+    fn set(&mut self, player_one: Player, up: bool, to: KeyCode) {
         info!("Start: {:#?}", self);
         // get old
         let old = match (player_one, up) {
-            (true, true) => self.player1.move_up,
-            (true, false) => self.player1.move_down,
-            (false, true) => self.player2.move_up,
-            (false, false) => self.player2.move_down,
+            (PlayerOne, true) => self.player1.move_up,
+            (PlayerOne, false) => self.player1.move_down,
+            (PlayerTwo, true) => self.player2.move_up,
+            (PlayerTwo, false) => self.player2.move_down,
         };
         // set new
         match (player_one, up) {
-            (true, true) => self.player1.move_up = to,
-            (true, false) => self.player1.move_down = to,
-            (false, true) => self.player2.move_up = to,
-            (false, false) => self.player2.move_down = to,
+            (PlayerOne, true) => self.player1.move_up = to,
+            (PlayerOne, false) => self.player1.move_down = to,
+            (PlayerTwo, true) => self.player2.move_up = to,
+            (PlayerTwo, false) => self.player2.move_down = to,
         };
 
         info!("Mid: {:#?}", self);
 
         //replace dub with old
-        for val in [true, false].iter().cloned().zip([true, false]) {
+        for val in [Player::PlayerOne, Player::PlayerTwo].iter().cloned().zip([true, false]) {
             if (player_one, up) == val {continue;}
             let current = match val {
-                (true, true) => self.player1.move_up,
-                (true, false) => self.player1.move_down,
-                (false, true) => self.player2.move_up,
-                (false, false) => self.player2.move_down,
+                (PlayerOne, true) => self.player1.move_up,
+                (PlayerOne, false) => self.player1.move_down,
+                (PlayerTwo, true) => self.player2.move_up,
+                (PlayerTwo, false) => self.player2.move_down,
             };
             if current == to {
                 match val {
-                    (true, true) => self.player1.move_up = old,
-                    (true, false) => self.player1.move_down = old,
-                    (false, true) => self.player2.move_up = old,
-                    (false, false) => self.player2.move_down = old,
+                    (PlayerOne, true) => self.player1.move_up = old,
+                    (PlayerOne, false) => self.player1.move_down = old,
+                    (PlayerTwo, true) => self.player2.move_up = old,
+                    (PlayerTwo, false) => self.player2.move_down = old,
                 };
             }
         }
         info!("End: {:#?}", self);
+    }
+
+    fn get(&self, player: Player) -> KeyBindings {
+        match player {
+            PlayerOne => self.player1,
+            PlayerTwo => self.player2,
+        }
     }
 }
 
@@ -109,4 +119,10 @@ fn back_to_main_menu(
     if input.just_pressed(KeyCode::Escape) {
         next.set(GameState::MainMenu);
     }
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Component)]
+enum Player {
+    PlayerOne,
+    PlayerTwo,
 }
