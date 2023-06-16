@@ -1,0 +1,28 @@
+body {
+    justify-content: center;
+    align-items: center;
+    align-content: center;
+    width: 100%;
+    height: 100%;
+}
+
+.menu {
+    width: 66%;
+    height: auto;
+    background-color: darkgray;
+    justify-content: center;
+    flex-direction: column;
+    margin: auto;
+}
+
+.menu button {
+    background-color: #ffffff;
+}
+
+.even {
+    justify-content: space-between;
+}
+
+#loading label {
+    font-size: 100;
+}
