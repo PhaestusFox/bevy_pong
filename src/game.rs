@@ -1,8 +1,9 @@
+use belly::prelude::*;
 use bevy::{prelude::*, window::PrimaryWindow, sprite::Anchor};
 use bevy_rapier2d::prelude::*;
 use rand::Rng;
 
-use crate::{GameState, Player, PlayerKeyBinds};
+use crate::{GameState, Player, PlayerKeyBinds, ai::{Opponent, AiBrain, PongAi}, KeyBindings};
 
 pub struct GamePlugin;
 
@@ -17,7 +18,8 @@ impl Plugin for GamePlugin {
         .add_system(clean_up_game.in_schedule(OnExit(GameState::Playing)))
         .add_system(move_paddle.in_set(OnUpdate(GameState::Playing)))
         .add_system(spawn_ball.in_set(OnUpdate(GameState::Playing)))
-        .add_system(score_point.in_set(OnUpdate(GameState::Playing)));
+        .add_system(score_point.in_set(OnUpdate(GameState::Playing)))
+        .add_system(spawn_score.in_schedule(OnEnter(GameState::Playing)));
     }
 }
 
@@ -25,13 +27,13 @@ impl Plugin for GamePlugin {
 struct GameItem;
 
 #[derive(Debug, Component)]
-struct Paddle {
+pub struct Paddle {
     size: Vec2,
     speed: f32,
 }
 
 #[derive(Component)]
-struct Ball;
+pub struct Ball;
 
 #[derive(Debug, Resource, Default)]
 struct Score(u8, u8);
@@ -149,19 +151,31 @@ fn move_paddle(
     settings: Res<PlayerKeyBinds>,
     input: Res<Input<KeyCode>>,
     time: Res<Time>,
-    window: Query<&Window, With<PrimaryWindow>>
+    window: Query<&Window, With<PrimaryWindow>>,
+    opponent: Res<State<Opponent>>,
+    ai: Res<AiBrain>,
 ) {
     let window = window.single();
     let map_size = Vec2::new(window.width()/2., window.height()/2.);
     for (mut transform, player, paddle) in &mut query {
-        let keys = settings.get(*player);
-        let mut delta = 0.0;
-        if input.pressed(keys.move_up) {delta += 1.;}
-        if input.pressed(keys.move_down) {delta -= 1.;}
+        let mut delta = match player {
+            Player::PlayerOne => get_human_delta(settings.get(Player::PlayerOne), &input),
+            Player::PlayerTwo => match opponent.0 {
+                Opponent::Human => get_human_delta(settings.get(Player::PlayerTwo), &input),
+                Opponent::Ai => {println!("Got Delta: {}", ai.get_delta()); ai.get_delta()},
+            }
+        };
         delta *= paddle.speed * time.delta_seconds();
         transform.translation.y += delta;
         transform.translation.y = transform.translation.y.clamp(-map_size.y + (paddle.size.y / 2.), map_size.y - (paddle.size.y / 2.));
     }
+}
+
+fn get_human_delta(keys: KeyBindings, input: &Input<KeyCode>) -> f32 {
+    let mut delta = 0.0;
+    if input.pressed(keys.move_up) {delta += 1.;}
+    if input.pressed(keys.move_down) {delta -= 1.;}
+    delta
 }
 
 fn spawn_ball(
@@ -229,4 +243,20 @@ fn score_point(
             }
         }
     }
+}
+
+fn spawn_score(
+    mut commands: Commands,
+) {
+    commands.add(eml! {
+        <div c:scoreboard with:GameItem>
+            <div c:score>
+                <label bind:value=from!(Score:0|fmt.c("{c}"))/>
+            </div>
+            <div c:break/>
+            <div c:score>
+                <label bind:value=from!(Score:1|fmt.c("{c}"))/>
+            </div>
+        </div>
+    })
 }

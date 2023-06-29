@@ -5,6 +5,8 @@ mod menu;
 
 mod game;
 
+mod ai;
+
 use Player::*;
 
 fn main() {
@@ -22,6 +24,7 @@ fn main() {
     .init_resource::<PlayerKeyBinds>()
     .add_system(back_to_main_menu)
     .add_plugin(game::GamePlugin)
+    .add_plugin(ai::AiPlugin)
     .run()
 }
 
@@ -34,6 +37,7 @@ enum GameState {
     #[default]
     MainMenu,
     SettingsMenu,
+    OpponentSelect,
     Playing,
 }
 

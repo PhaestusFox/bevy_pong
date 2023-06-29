@@ -26,3 +26,23 @@ body {
 #loading label {
     font-size: 100;
 }
+
+.scoreboard {
+    top: 0px;
+    max-height: 20%;
+    margin-left: auto;
+    margin-right: auto;
+}
+
+.score {
+    padding: 20px;
+}
+
+.scoreboard label {
+    font-size: 150;
+}
+
+.scoreboard .break {
+    width: 5px;
+    background-color: black;
+}

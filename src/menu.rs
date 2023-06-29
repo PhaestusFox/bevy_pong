@@ -1,6 +1,6 @@
 use bevy::{prelude::*, input::{keyboard::KeyboardInput, ButtonState}};
 use belly::prelude::*;
-use crate::{GameState, PlayerKeyBinds, KeyBindings};
+use crate::{GameState, PlayerKeyBinds, KeyBindings, ai::{Opponent, AiBrain}};
 
 pub struct MenuPlugins;
 
@@ -10,6 +10,7 @@ impl PluginGroup for MenuPlugins {
         .add(MenuCore)
         .add(MainMenuPlugin)
         .add(SettingsPlugin)
+        .add(OpponentMenuPlugin)
     }
 }
 
@@ -51,6 +52,7 @@ impl Plugin for SettingsPlugin {
 enum MenuRoot {
     Main,
     Setting,
+    Opponent,
 }
 
 fn spawn_main_menu(
@@ -61,7 +63,7 @@ fn spawn_main_menu(
         <div c:menu with=root>
             <button on:press=run!(|c| {
                 c.commands().add(|world: &mut World| {
-                    world.resource_mut::<NextState<GameState>>().set(GameState::Playing);
+                    world.resource_mut::<NextState<GameState>>().set(GameState::OpponentSelect);
                 })
             })>
             <label c:content value="Play"/>
@@ -73,7 +75,7 @@ fn spawn_main_menu(
             })>
             <label c:content value="Settings"/>
             </button>
-        </div> // end top
+        </div>
     });
 }
 
@@ -178,4 +180,70 @@ fn set_key_binding(
 
 fn name_state<T: States>(state: Res<State<T>>) {
     info!("You are in state: {:?}", state.0);
+}
+
+pub struct OpponentMenuPlugin;
+
+impl Plugin for OpponentMenuPlugin {
+    fn build(&self, app: &mut App) {
+        app
+        .add_system(spawn_opponent_menu.in_schedule(OnEnter(GameState::OpponentSelect)))
+        .add_system(close_opponent_menu.in_schedule(OnExit(GameState::OpponentSelect)));
+    }
+}
+
+fn spawn_opponent_menu(
+    mut commands: Commands,
+) {
+    let root = MenuRoot::Opponent;
+    commands.add(eml!{
+        <div c:menu with=root>
+        <button on:press=run!(|c| {
+            c.commands().add(|world: &mut World| {
+                world.resource_mut::<NextState<Opponent>>().set(Opponent::Human);
+                world.resource_mut::<NextState<GameState>>().set(GameState::Playing);
+            })
+        })>
+        <label c:content value="Player2"/>
+        </button>
+        <button on:press=run!(|c| {
+            c.commands().add(|world: &mut World| {
+                world.insert_resource(AiBrain::new_simple());
+                world.resource_mut::<NextState<Opponent>>().set(Opponent::Ai);
+                world.resource_mut::<NextState<GameState>>().set(GameState::Playing);
+            })
+        })>
+        <label c:content value="Simple Ai"/>
+        </button>
+        <button on:press=run!(|c| {
+            c.commands().add(|world: &mut World| {
+                world.insert_resource(AiBrain::new_goaly());
+                world.resource_mut::<NextState<Opponent>>().set(Opponent::Ai);
+                world.resource_mut::<NextState<GameState>>().set(GameState::Playing);
+            })
+        })>
+        <label c:content value="Goaly Ai"/>
+        </button>
+        <button on:press=run!(|c| {
+            c.commands().add(|world: &mut World| {
+                world.insert_resource(AiBrain::new_smart());
+                world.resource_mut::<NextState<Opponent>>().set(Opponent::Ai);
+                world.resource_mut::<NextState<GameState>>().set(GameState::Playing);
+            })
+        })>
+        <label c:content value="Smart Ai"/>
+        </button>
+    </div>
+    });
+}
+
+fn close_opponent_menu(
+    items: Query<(Entity, &MenuRoot)>,
+    mut commands: Commands,
+) {
+    for (entity, root) in &items {
+        if let MenuRoot::Opponent = root {
+            commands.entity(entity).despawn_recursive()
+        }
+    }
 }
