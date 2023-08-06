@@ -1,4 +1,4 @@
-use bevy::prelude::*;
+use bevy::{prelude::*, asset::ChangeWatcher};
 use serde::{Serialize, Deserialize};
 
 mod menu;
@@ -12,19 +12,21 @@ use Player::*;
 fn main() {
     App::new()
     .add_plugins(DefaultPlugins.set(AssetPlugin {
-        watch_for_changes: true,
+        watch_for_changes: ChangeWatcher::with_delay(std::time::Duration::from_millis(50)),
         ..Default::default()
     }))
-    .add_plugin(belly::prelude::BellyPlugin)
-    .add_plugin(bevy_editor_pls::EditorPlugin)
+    .add_plugins(bevy_kira_audio::AudioPlugin)
+    .add_plugins(belly::prelude::BellyPlugin)
+    .add_plugins(bevy_editor_pls::EditorPlugin::default())
     .add_state::<GameState>()
     .add_plugins(menu::MenuPlugins)
     .insert_resource(bevy_pkv::PkvStore::new("PhaestusFox", "Pong"))
-    .add_system(spawn_cam.on_startup())
+    .add_systems(Startup, spawn_cam)
     .init_resource::<PlayerKeyBinds>()
-    .add_system(back_to_main_menu)
-    .add_plugin(game::GamePlugin)
-    .add_plugin(ai::AiPlugin)
+    .add_systems(Update, back_to_main_menu)
+    .add_plugins(game::GamePlugin)
+    .add_plugins(ai::AiPlugin)
+    .add_plugins(bevy_hanabi::HanabiPlugin)
     .run()
 }
 
@@ -38,7 +40,8 @@ enum GameState {
     MainMenu,
     SettingsMenu,
     OpponentSelect,
-    Playing,
+    PlayingNormal,
+    PlayingOrbit,
 }
 
 #[derive(Resource, Serialize, Deserialize, Debug)]
@@ -130,3 +133,4 @@ enum Player {
     PlayerOne,
     PlayerTwo,
 }
+

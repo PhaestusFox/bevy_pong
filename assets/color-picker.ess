@@ -46,3 +46,12 @@ body {
     width: 5px;
     background-color: black;
 }
+
+.orbit.score {
+    margin: auto;
+    font-size: 100;
+}
+
+.center {
+    margin: auto;
+}

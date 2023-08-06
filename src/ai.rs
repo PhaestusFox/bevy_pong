@@ -10,7 +10,7 @@ impl Plugin for AiPlugin {
         app
         .add_state::<Opponent>()
         .insert_resource(AiBrain::new_simple())
-        .add_system(update_ai.in_base_set(CoreSet::Last));
+        .add_systems(Last, update_ai);
     }
 }
 
